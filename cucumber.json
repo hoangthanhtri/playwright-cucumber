@@ -1,0 +1,13 @@
+{
+  "default":{
+      "formatOptions": {
+          "snippetInterface": "async-await"
+      },
+      "dryRun": false,
+      "require": ["src/test/api/steps/**/*.ts",
+                  "src/test/ui/steps/**/*.ts",
+                  "src/core/hook.ts"],
+      "requireModule":["ts-node/register"]
+
+  }
+}

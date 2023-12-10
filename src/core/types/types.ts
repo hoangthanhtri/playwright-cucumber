@@ -23,10 +23,26 @@ export type ReportResponse = {
 export type ReportPortalConnection = {
     apiKey: string,
     endpoint: string,
-    launch: string,
     project: string
-    debug: boolean
+    debug: boolean,
+    launchUuidPrint?: boolean,
+    isLaunchMergeRequired?: boolean,
+    headers?: Record<string, string>,
+    restClientConfig?: Record<string, string>,
+    attributes?: ReportAttributes[],
+    mode?: 'DEFAULT'|'DEBUG',
+    description?: string,
+    launch?: string
+
 }
+
+export type MergeLaunchesOptions = {
+    extendSuitesDescription?: boolean,
+    description?: string,
+    mergeType: 'BASIC' | 'DEEP',
+    name: string
+}
+
 
 
 

@@ -5,11 +5,12 @@
   "main": "index.js",
   "scripts": {
     "dev:generate-endpoints": "cross-env ENV=dev ts-node ./src/core/api/endpoints-generator/generator-runner.ts",
-    "dev:api test": "cross-env ENV=dev TEST_TYPE=api cucumber-js  test ./src/test/api/features ",
-    "dev:ui test": "cross-env ENV=dev TEST_TYPE=ui cucumber-js test src/test/ui/features",
+    "dev:api test": "cross-env ENV=dev cucumber-js  test ./src/test/api/features api",
+    "dev:ui test": "cross-env ENV=dev cucumber-js test src/test/ui/features ui",
     "stg:generate-endpoints": "cross-env ENV=stg ts-node ./src/core/api/generator-runner.ts",
-    "stg:api test": "cross-env ENV=stg TEST_TYPE=api cucumber-js test src/test/api/features",
-    "stg:ui test": "cross-env ENV=stg TEST_TYPE=ui cucumber-js test src/test/ui/features"
+    "stg:api test": "cross-env ENV=stg cucumber-js test src/test/api/features api",
+    "stg:ui test": "cross-env ENV=stg cucumber-js test src/test/ui/features ui",
+    "dev:merge report": "cross-env ENV=dev ts-node ./src/core/helper/report/report-runner.ts"
   },
   "type": "commonjs",
   "keywords": [],
@@ -28,7 +29,8 @@
     "@types/node-fetch": "^2.6.6",
     "cross-env": "^7.0.3",
     "dotenv": "^16.3.1",
-    "fs-extra": "^11.1.1",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.3.10",
     "lodash": "^4.17.21",
     "node-fetch": "^3.3.2",
     "openapi-types": "^12.1.3",

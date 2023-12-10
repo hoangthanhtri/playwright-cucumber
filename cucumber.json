@@ -6,7 +6,7 @@
       "dryRun": false,
       "require": ["src/test/api/steps/**/*.ts",
                   "src/test/ui/steps/**/*.ts",
-                  "src/core/hook.ts"],
+                  "src/core/hooks/hook.ts"],
       "requireModule":["ts-node/register"]
 
   }

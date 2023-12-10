@@ -1,4 +1,4 @@
-import {  ReportAttributes, ReportResponse, ReportPortalConnection } from '../../types/types';
+import {  ReportAttributes, ReportResponse, ReportPortalConnection,MergeLaunchesOptions } from '../../types/types';
 import { ReportStatuses } from '../../types/enums';
 import { GherkinDocument, Pickle, PickleStep, TestStepResult} from '@cucumber/messages'
 //@ts-ignore
@@ -8,27 +8,33 @@ export class  ReportPortal{
 
     private static reportClient: typeof RPClient | undefined; // Instance variable to store RPClient
 
-   static async reportInit(launchName: string,reportConnection: ReportPortalConnection ,attributes?: ReportAttributes[], mode: 'DEFAULT'|'DEBUG' ='DEFAULT', tempId?: string,description?: string){
-        this.reportClient = await new RPClient(reportConnection);
+
+   static async init(reportPortalConnection: ReportPortalConnection){
+        if(!reportPortalConnection) throw new Error("Report portal connection is not defined");
+        
+        this.reportClient = new RPClient(reportPortalConnection);
+
         if(!this.reportClient) throw new Error("Can't init report portal");
         await this.reportClient.checkConnect().then(() => {
             console.log('Connected to ReportPortal');
         }).catch(() => {
             console.error('Error connecting to ReportPortal');
-        });
+        });  
+    }
 
+    static async startLaunch(launchName: string,attributes?: ReportAttributes[], mode: 'DEFAULT'|'DEBUG' ='DEFAULT',description?: string): Promise<string>{
+        if(!this.reportClient) throw new Error("Can't init report portal");
         const launchData = {
             name: launchName,
             startTime: this.reportClient.helpers.now(),
             description: description,
             attributes: attributes,
-            id: tempId,
             mode: mode
         };
 
         const launchObj = await this.reportClient.startLaunch(launchData) as ReportResponse;        
-
-        return launchObj.tempId;        
+        
+        return launchObj.tempId;
     }
 
     static async reportClose(launchId: string){
@@ -141,19 +147,27 @@ export class  ReportPortal{
         return await this.reportClient.finishTestItem(stepId,dataObject);
     }
 
-    static async stepLogs(itemId: string, result : TestStepResult){
+    static async stepLogs(itemId: string, result : TestStepResult, imageBase64?: string, imageName?: string){
         if(!this.reportClient) throw new Error("Can't init report portal");
         if(!result) throw new Error("Result is not defined");
-        if(this.convertCucumberStatusToReportPortalStatus(result.status) !== ReportStatuses.PASSED){
-            
-            await this.reportClient.sendLog(itemId, {
-                message: result.message,
+
+        if(this.convertCucumberStatusToReportPortalStatus(result.status) !== ReportStatuses.PASSED){  
+            const dataObject ={
+                message: this.stripAnsiCodes(result.message),
                 level: 'ERROR',
                 time: this.reportClient.helpers.now()
-            });
+            }          
+            if (imageName && imageBase64) {
+                const attachment = {
+                    name: imageName,
+                    content: imageBase64,
+                    type: 'image/png'
+                };
+                await this.reportClient.sendLog(itemId, dataObject, attachment);
+            } else {
+                await this.reportClient.sendLog(itemId, dataObject);
+            }
         }
-
-
     }
 
     static async addLog(stepId: string, message: string, level: 'TRACE'|'DEBUG'|'INFO'|'WARN'|'ERROR'|'FATAL' = 'INFO', imageName?: string, imageBase64?: string ){
@@ -177,6 +191,23 @@ export class  ReportPortal{
         
     }
 
+    static megereLaunches(mergeLaunchesOptions: MergeLaunchesOptions){
+        if(!this.reportClient) throw new Error("Can't init report portal");
+        if(!mergeLaunchesOptions) throw new Error("Merge launches options is not defined");
+        if(!mergeLaunchesOptions.name) throw new Error("Merge launches name is not defined");
+        if(!mergeLaunchesOptions.mergeType) throw new Error("Merge launches merge type is not defined");
+        
+        const dataObject = {
+            name: mergeLaunchesOptions.name,
+            description: mergeLaunchesOptions.description,
+            extendSuitesDescription: mergeLaunchesOptions.extendSuitesDescription,
+            mergeType: mergeLaunchesOptions.mergeType
+        }
+
+        return this.reportClient.mergeLaunches(dataObject);
+    }
+
+
 
     
 
@@ -192,6 +223,15 @@ export class  ReportPortal{
             case 'UNKNOWN': return ReportStatuses.SKIPPED;
             default: return ReportStatuses.SKIPPED;
         }
+    }
+
+    private static stripAnsiCodes(string : string|undefined): string {
+        if(!string) throw new Error("String is not defined")
+        const ansiRegex = new RegExp(
+            "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))",
+            "g"
+        );
+        return string.replace(ansiRegex, '');
     }
 
 
